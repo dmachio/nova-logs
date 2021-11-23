@@ -80,7 +80,7 @@ class NovaLogViewerController extends Controller
         $menus = $log->menu();
 
         return response()->json([
-            'log' => $log,
+            'log' => [ 'date' => $log->date ],
             'info' => [
                 'path' => $log->getPath(),
                 'size' => $log->size(),
@@ -90,7 +90,7 @@ class NovaLogViewerController extends Controller
             ],
             'levels' => $levels,
             'level' => $level,
-            'entries' => $entries,
+            'entries' => $this->convertFromLatin1ToUtf8Recursively($entries),
             'menus' => $menus
         ], 200);
     }
@@ -213,5 +213,32 @@ class NovaLogViewerController extends Controller
         }
 
         return $log;
+    }
+
+    /**
+     * Encode array from latin1 to utf8 recursively
+     * @param string $dat
+     * @return array|string
+     */
+    private function convertFromLatin1ToUtf8Recursively($dat)
+    {
+        if (is_string($dat)) {
+            return utf8_encode($dat);
+        }
+
+        if (is_array($dat)) {
+            $ret = [];
+            foreach ($dat as $i => $d) $ret[$i] = $this->convertFromLatin1ToUtf8Recursively($d);
+
+            return $ret;
+        }
+
+        if (is_object($dat)) {
+            foreach ($dat as $i => $d) $dat->$i = $this->convertFromLatin1ToUtf8Recursively($d);
+
+            return $dat;
+        }
+
+        return $dat;
     }
 }
